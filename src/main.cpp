@@ -1,35 +1,34 @@
 #include "main.h"
+#include "time_api.h"
 #include <Arduino.h>
 #include "../.pio/libdeps/nodemcuv2/RTClib/src/RTClib.h"
 #include "cover_layout.h"
 #include "../.pio/libdeps/nodemcuv2/Adafruit NeoPixel/Adafruit_NeoPixel.h"
 #include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
-#include <WiFiClient.h>
 #include <BlynkSimpleEsp8266.h>
-#include "../.pio/libdeps/nodemcuv2/ArduinoJson/src/ArduinoJson.h"
 
-#define       INIT_RTC_TIME     1
-#define       WRITE_ES_IST      1
-#define       WRITE_UHR         1
-#define       MAX_WRITE_SIZE    64
-#define       LEDS_PER_LETTER   1
-#define       LED_COUNT         110
-#define       LED_PIN           D3
 
-/////////////////////////////////////////////////////////////////
-#define BLYNK_TEMPLATE_ID           "TMPLUvgqHBuw"
-#define BLYNK_DEVICE_NAME           "Quickstart Device"
-#define BLYNK_AUTH_TOKEN            "hR_OHElHMlm_kDqa-VxoFI-egUOMmElc"
+#define       INIT_RTC_TIME               1
+#define       WRITE_ES_IST                1
+#define       WRITE_UHR                   1
+#define       MAX_WRITE_SIZE              64
+#define       LEDS_PER_LETTER             1
+#define       LED_COUNT                   110
+#define       LED_PIN                     D3
+#define       BLYNK_TEMPLATE_ID           "TMPLUvgqHBuw"
+#define       BLYNK_DEVICE_NAME           "Quickstart Device"
+#define       BLYNK_AUTH_TOKEN            "hR_OHElHMlm_kDqa-VxoFI-egUOMmElc"
+#define       BLYNK_PRINT                 Serial
 
-// Comment this out to disable prints and save space
-#define BLYNK_PRINT Serial
-
+// Your WiFi credentials.
+// Set password to "" for open networks.
+const char* ssid = "Schmidlan";
+const char* pass = "livelaughlove69";
 
 RTC_DS1307          rtc;
 DateTime            dateTime;
 int8_t              hours;
-int8_t              minutes; 
+int8_t              minutes;  
 int8_t              write_idx[MAX_WRITE_SIZE];
 int8_t              active_idx[MAX_WRITE_SIZE];
 int8_t              write_idx_ptr;
@@ -42,18 +41,9 @@ bool                time_change   = true;
 bool                color_change  = false;
 bool                brightness_change = false;
 bool                rainbow_flag  = false;
+char                auth[] = BLYNK_AUTH_TOKEN;
+BlynkTimer          timer;
 
-
-char auth[] = BLYNK_AUTH_TOKEN;
-
-// Your WiFi credentials.
-// Set password to "" for open networks.
-const char* ssid = "Schmidlan";
-const char* pass = "livelaughlove69";
-const char* timeApi = "http://worldtimeapi.org/api/timezone/Europe/Berlin";
-
-
-BlynkTimer timer;
 
 // This function is called every time the device is connected to the Blynk.Cloud
 BLYNK_CONNECTED()
@@ -62,9 +52,7 @@ BLYNK_CONNECTED()
 
 void myTimerEvent()
 {
-
 }
-/////////////////////////////////////////////////////////
 
 void led_startup()
 {
@@ -90,73 +78,6 @@ void copy_write_idx_to_active_idx()
   for (int i = 0; i < MAX_WRITE_SIZE; i++)
   {
     active_idx[i] = write_idx[i];
-  }
-}
-
-String httpGETRequest(const char* serverName) {
-  WiFiClient client;
-  HTTPClient http;
-    
-  // Your IP address with path or Domain name with URL path 
-  http.begin(client, serverName);
-  
-  // Send HTTP POST request
-  int httpResponseCode = http.GET();
-  
-  String payload = "{}"; 
-  
-  if (httpResponseCode>0) {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    payload = http.getString();
-  }
-  else {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-  // Free resources
-  http.end();
-
-  return payload;
-}
-
-void get_time_from_api()
-{
-  String timeString;
-  StaticJsonDocument<1000> doc;
-  unsigned long timerDelay = 1000;
-  static unsigned long lastTime = 0;
-  if ((millis() - lastTime) > timerDelay)
-  {
-    //Check WiFi connection status
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      timeString = httpGETRequest(timeApi);
-
-      // Deserialize the JSON document
-      DeserializationError error = deserializeJson(doc, timeString);
-
-      // Test if parsing succeeds.
-      if (error)
-      {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
-        return;
-      }
-      String currentDateTime = doc["datetime"];
-      // Only Update Time if api call was successful 
-      Serial.println(currentDateTime == "null");
-      if (currentDateTime != "null")
-      {
-        String hoursStr = currentDateTime.substring(11, 13);
-        String minutesStr = currentDateTime.substring(14, 16);
-
-        hours = hoursStr.toInt();
-        minutes = minutesStr.toInt();
-      }
-    }
-
-    lastTime = millis();
   }
 }
 
@@ -192,7 +113,7 @@ void add_to_write_idx(int8_t start, int8_t amount)
   }
 }
 
-void update_display()
+void calculate_next_leds()
 {
   
   static int8_t prev_minutes = -1;
@@ -504,14 +425,10 @@ void setup()
   clear_write_idx_array();
   strip.begin();
   strip.setBrightness(brightness);
-
-  //Blynk.begin(auth, ssid, pass);
-  // You can also specify server:
   Blynk.begin(auth, ssid, pass, "blynk.cloud", 80);
-  //Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,100), 8080);
-
   // Setup a function to be called every 100 ms
   timer.setInterval(100, myTimerEvent);
+
   // Setup WiFi for API Call
   WiFi.begin(ssid, pass);
   Serial.println("Connecting");
@@ -534,9 +451,8 @@ void loop()
   else{
     dateTime = rtc.now();
   }
-  update_display();
+  calculate_next_leds();
   show_leds();
   Blynk.run();
   timer.run();
-
 }
