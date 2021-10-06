@@ -8,7 +8,7 @@
 #include <BlynkSimpleEsp8266.h>
 
 
-#define       INIT_RTC_TIME               1
+#define       INIT_RTC_TIME               0
 #define       WRITE_ES_IST                1
 #define       WRITE_UHR                   1
 #define       MAX_WRITE_SIZE              64
@@ -26,9 +26,14 @@ const char* ssid = "Schmidlan";
 const char* pass = "livelaughlove69";
 
 RTC_DS1307          rtc;
+int8_t              rtc_begin_return;
+int16_t             api_response_code;
 DateTime            dateTime;
 int8_t              hours;
+int8_t              hours_offset;
 int8_t              minutes;  
+int8_t              minutes_offset;
+uint32_t            unixtime = 0;
 int8_t              write_idx[MAX_WRITE_SIZE];
 int8_t              active_idx[MAX_WRITE_SIZE];
 int8_t              write_idx_ptr;
@@ -41,6 +46,8 @@ bool                time_change   = true;
 bool                color_change  = false;
 bool                brightness_change = false;
 bool                rainbow_flag  = false;
+bool                use_rtc       = true;
+bool                force_refresh = false;
 char                auth[] = BLYNK_AUTH_TOKEN;
 BlynkTimer          timer;
 
@@ -48,10 +55,17 @@ BlynkTimer          timer;
 // This function is called every time the device is connected to the Blynk.Cloud
 BLYNK_CONNECTED()
 {
+  Blynk.syncAll();
 }
 
 void myTimerEvent()
 {
+  Blynk.virtualWrite(V6, hours);
+  Blynk.virtualWrite(V7, minutes);
+  Blynk.virtualWrite(V8, api_response_code);
+  Blynk.virtualWrite(V9, rtc_begin_return);
+  Blynk.virtualWrite(V10, hours_offset);
+  Blynk.virtualWrite(V11, minutes_offset);
 }
 
 void led_startup()
@@ -117,7 +131,7 @@ void calculate_next_leds()
 {
   
   static int8_t prev_minutes = -1;
-  if (WiFi.status() != WL_CONNECTED)
+  if (use_rtc)
   {
     hours = dateTime.hour();
     minutes = dateTime.minute();
@@ -127,11 +141,11 @@ void calculate_next_leds()
   bool   get_next_hour = false;
   bool   full_hour     = false;
 
-  if (prev_minutes != minutes)
+  if (prev_minutes != minutes || force_refresh)
   {
     time_change = true;
 
-    if (minutes_mod_5 > 0) minutes_div_5 = minutes - minutes_mod_5;
+    minutes_div_5 = minutes - minutes_mod_5;
 
     #if WRITE_ES_IST
       // ES
@@ -240,9 +254,17 @@ void calculate_next_leds()
     switch(hours)
     {
       case(1):
-        Serial.print("EINS");
+
+        // EIN
+        if (full_hour) {
+          add_to_write_idx(63,3);
+          Serial.print("EIN");
+        }
         // EINS
-        add_to_write_idx(62, 4);
+        else {
+          Serial.print("EINS");
+          add_to_write_idx(62, 4);
+        }
         break;
       case(2):
         Serial.print("ZWEI");
@@ -406,13 +428,80 @@ BLYNK_WRITE(V4)
   param.asInt() > 0 ? rainbow_flag = true: rainbow_flag = false;
 }
 
+BLYNK_WRITE(V5)
+{
+  param.asInt() == 0 ? use_rtc = true: use_rtc = false;
+}
+
+BLYNK_WRITE(V10)
+{
+  hours_offset = param.asInt();
+  calculate_next_leds();
+}
+
+BLYNK_WRITE(V11)
+{
+  int pinData = param.asInt();
+
+  if (pinData == 0)
+  {
+    force_display_refresh();
+  }
+}
+
+BLYNK_WRITE(V12)
+{
+  int pinData = param.asInt();
+
+  if (pinData == 0)
+  {
+    set_rtc_with_current_api_time();
+    force_display_refresh();
+  }
+}
+
+void set_rtc_with_current_api_time()
+{
+  if (rtc_begin_return && WiFi.status() == WL_CONNECTED)
+  {
+    get_time_from_api();
+    if (unixtime != 0)
+    {
+      rtc.adjust(DateTime(unixtime));
+      Serial.println("RTC set with current API time!");
+      Serial.println(unixtime);
+      DateTime now = rtc.now();
+      int temphour = now.hour();
+      int tempmin = now.minute();
+      Serial.println(temphour);
+      Serial.println(tempmin);
+    }
+    else {
+      Serial.println("Time couldn't be set.");
+    }
+  }
+  else 
+  {
+    Serial.println("Missing RTC or WiFi connection.");
+  }
+}
+
+void force_display_refresh()
+{
+  force_refresh = true;
+  calculate_next_leds();
+  Serial.println("Forced display refresh.");
+  force_refresh = false;
+}
+
 void setup() 
 {
   Serial.begin(9600);
+  rtc_begin_return = rtc.begin();
   if (! rtc.begin() ) 
   {
-    Serial.println("Couldn't find RTC");
-    yield();
+    use_rtc = false;
+    Serial.println("Couldn't find RTC, using API.");
   }
   else
   {
@@ -426,8 +515,8 @@ void setup()
   strip.begin();
   strip.setBrightness(brightness);
   Blynk.begin(auth, ssid, pass, "blynk.cloud", 80);
-  // Setup a function to be called every 100 ms
-  timer.setInterval(100, myTimerEvent);
+  // Setup a function to be called every second
+  timer.setInterval(1000, myTimerEvent);
 
   // Setup WiFi for API Call
   WiFi.begin(ssid, pass);
@@ -444,12 +533,12 @@ void setup()
 
 void loop() 
 {
-  if (WiFi.status() == WL_CONNECTED)
+  if (use_rtc)
   {
-    get_time_from_api();
+    dateTime = rtc.now();
   }
   else{
-    dateTime = rtc.now();
+    get_time_from_api();
   }
   calculate_next_leds();
   show_leds();

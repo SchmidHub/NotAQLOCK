@@ -13,20 +13,20 @@ String httpGETRequest(const char *serverName)
     http.begin(client, serverName);
 
     // Send HTTP POST request
-    int httpResponseCode = http.GET();
+    api_response_code = http.GET();
 
     String payload = "{}";
 
-    if (httpResponseCode > 0)
+    if (api_response_code > 0)
     {
         Serial.print("HTTP Response code: ");
-        Serial.println(httpResponseCode);
+        Serial.println(api_response_code);
         payload = http.getString();
     }
     else
     {
         Serial.print("Error code: ");
-        Serial.println(httpResponseCode);
+        Serial.println(api_response_code);
     }
     // Free resources
     http.end();
@@ -38,7 +38,7 @@ void get_time_from_api()
 {
     const char *timeApi = "http://worldtimeapi.org/api/timezone/Europe/Berlin";
     String timeString;
-    StaticJsonDocument<1000> doc;
+    StaticJsonDocument<800> doc;
     unsigned long timerDelay = 1000;
     static unsigned long lastTime = 0;
     if ((millis() - lastTime) > timerDelay)
@@ -59,6 +59,10 @@ void get_time_from_api()
                 return;
             }
             String currentDateTime = doc["datetime"];
+            String unixtimeStr = doc["unixtime"];
+            String offsetStr = doc["raw_offset"];
+            int offset = offsetStr.toInt();
+            unixtime = unixtimeStr.toInt() + 2 * offset;
             // Only Update Time if api call was successful
             Serial.println(currentDateTime == "null");
             if (currentDateTime != "null")

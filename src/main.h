@@ -9,6 +9,8 @@ extern int8_t hours;
 extern int8_t minutes;
 extern const char* ssid;
 extern const char* pass;
+extern int16_t api_response_code;
+extern uint32_t unixtime;
 
 
 // Not used at the moment
@@ -35,6 +37,10 @@ void add_to_write_idx(int8_t start, int8_t amount);
 void calculate_next_leds();
 // Lights all leds stored in write_idx array if time, brightness or color changed
 void show_leds();
+//
+void set_rtc_with_current_api_time();
+//
+void force_display_refresh();
 // Init procedure 
 void setup();
 // Running procedure
