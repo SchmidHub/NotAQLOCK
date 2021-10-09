@@ -15,6 +15,7 @@
 #define       LEDS_PER_LETTER             1
 #define       LED_COUNT                   110
 #define       LED_PIN                     D3
+#define       PHOTORES_PIN                A0
 #define       BLYNK_TEMPLATE_ID           "TMPLUvgqHBuw"
 #define       BLYNK_DEVICE_NAME           "Quickstart Device"
 #define       BLYNK_AUTH_TOKEN            "hR_OHElHMlm_kDqa-VxoFI-egUOMmElc"
@@ -68,23 +69,47 @@ void myTimerEvent()
   Blynk.virtualWrite(V11, minutes_offset);
 }
 
+bool array_contains(int8_t array[], int elem, int array_size)
+{
+  for (int i = array_size; i >= 0; i--)
+  {
+    if (array[i] == elem) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void led_startup()
 {
+  int j = 1;
+  get_current_time();
+  calculate_next_leds();
   for(int i = 0 ; i < LED_COUNT; i++)
   {
     strip.setPixelColor(i, strip.Color(color_red, color_green, color_blue));
-    strip.show();
-    delay(25);
+    j++;
+    if (j % 11 == 0)
+    {
+      strip.show();
+      delay(100);
+    }
   }
+  j = 1;
   for(int i = LED_COUNT; i >= 0; i--)
   {
-    strip.setPixelColor(i, strip.Color(0, 0, 0));
-    strip.show();
-    delay(25);
+    if (!array_contains(write_idx, i, MAX_WRITE_SIZE))
+    {
+      strip.setPixelColor(i, strip.Color(0, 0, 0));
+    }
+
+    j++;
+    if (j % 11 == 0)
+    {
+      strip.show();
+      delay(100);
+    }
   }
-  strip.clear();
-  strip.show();
-  delay(100);
 }
 
 void copy_write_idx_to_active_idx()
@@ -494,6 +519,23 @@ void force_display_refresh()
   force_refresh = false;
 }
 
+void get_current_time()
+{
+  if (use_rtc)
+    dateTime = rtc.now();
+  else
+    get_time_from_api();
+}
+
+/* void get_brightness()
+{
+  float bright = analogRead(PHOTORES_PIN) * 1.0;
+  brightness = (bright/70.0 * 100) - 20;
+  Serial.println(brightness);
+  strip.setBrightness(brightness);
+  brightness_change = true;
+} */
+
 void setup() 
 {
   Serial.begin(9600);
@@ -533,13 +575,8 @@ void setup()
 
 void loop() 
 {
-  if (use_rtc)
-  {
-    dateTime = rtc.now();
-  }
-  else{
-    get_time_from_api();
-  }
+/*   get_brightness(); */
+  get_current_time();
   calculate_next_leds();
   show_leds();
   Blynk.run();

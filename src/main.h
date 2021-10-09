@@ -41,6 +41,8 @@ void show_leds();
 void set_rtc_with_current_api_time();
 //
 void force_display_refresh();
+// 
+void get_current_time();
 // Init procedure 
 void setup();
 // Running procedure
