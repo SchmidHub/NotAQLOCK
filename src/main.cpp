@@ -13,7 +13,7 @@
 #define       WRITE_UHR                   1
 #define       MAX_WRITE_SIZE              64
 #define       LEDS_PER_LETTER             1
-#define       LED_COUNT                   110
+#define       LED_COUNT                   180
 #define       LED_PIN                     D3
 #define       PHOTORES_PIN                A0
 #define       BLYNK_TEMPLATE_ID           "TMPLUvgqHBuw"
@@ -23,8 +23,8 @@
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
-const char* ssid = "Schmidlan";
-const char* pass = "livelaughlove69";
+const char* ssid = "Chrimbo 2,4 GHz";
+const char* pass = "TegernseerHell";
 
 RTC_DS1307          rtc;
 int8_t              rtc_begin_return;
@@ -126,22 +126,6 @@ void clear_write_idx_array()
   memset(write_idx, -1, MAX_WRITE_SIZE);
 }
 
-void init_letter_array()
-{
-  int8_t x = 0;
-  int8_t y = 0;
-  for (int i = 0; i < NUMBER_OF_LETTERS; i++)
-  {
-    letter_arr[i].c = init_letter_arr[i];
-    letter_arr[i].on = false;
-    letter_arr[i].x = x;
-    letter_arr[i].y = y;  
-    x++;
-    if (i > 0 && (i % 10) == 0) y++;
-    if (x > 10) x = 0; 
-  }
-}
-
 void add_to_write_idx(int8_t start, int8_t amount)
 {
   int8_t i = 0;
@@ -185,43 +169,43 @@ void calculate_next_leds()
       case(5):
         Serial.print("FÜNF NACH ");
         // FÜNF
-        add_to_write_idx(7, 4);
+        add_to_write_idx(words[2].position, words[2].length);
         // NACH
-        add_to_write_idx(33, 4);
+        add_to_write_idx(words[7].position, words[7].length);
         break;
       case(10):
         Serial.print("ZEHN NACH ");
         // ZEHN
-        add_to_write_idx(18, 4);
+        add_to_write_idx(words[3].position, words[3].length);
         // NACH
-        add_to_write_idx(33, 4);
+        add_to_write_idx(words[7].position, words[7].length);
         break;
       case(15):
         Serial.print("VIERTEL NACH ");
         // VIERTEL
-        add_to_write_idx(26, 7);
+        add_to_write_idx(words[22].position, words[22].length);
         // NACH
-        add_to_write_idx(33, 4);
+        add_to_write_idx(words[7].position, words[7].length);
         break;
       case(20):
         Serial.print("ZWANZIG NACH ");
         // ZWANZIG
-        add_to_write_idx(11, 7);
+        add_to_write_idx(words[4].position, words[4].length);
         // NACH
-        add_to_write_idx(33, 4);
+        add_to_write_idx(words[7].position, words[7].length);
         break;
       case(25):
         Serial.print("FÜNF VOR HALB ");
         // FÜNF
-        add_to_write_idx(7, 4);
+        add_to_write_idx(words[2].position, words[2].length);
         // VOR
-        add_to_write_idx(41, 3);
+        add_to_write_idx(words[6].position, words[6].length);
         // HALB
-        add_to_write_idx(44, 4);
+        add_to_write_idx(words[8].position, words[8].length);
         get_next_hour = true;
         break;
       case(30):
-        Serial.print("HALB ");
+        add_to_write_idx(words[8].position, words[8].length);
         // HALB
         add_to_write_idx(44, 4);
         get_next_hour = true;
@@ -229,43 +213,43 @@ void calculate_next_leds()
       case(35):
         Serial.print("FÜNF NACH HALB ");
         // FÜNF
-        add_to_write_idx(7, 4);
+         add_to_write_idx(words[2].position, words[2].length);
         // NACH
-        add_to_write_idx(33, 4);
+        add_to_write_idx(words[7].position, words[7].length);
         // HALB
-        add_to_write_idx(44, 4);
+         add_to_write_idx(words[8].position, words[8].length);
         get_next_hour = true;
         break;
       case(40):
         Serial.print("ZWANZIG VOR ");
         // ZWANZIG
-        add_to_write_idx(11, 7);
+        add_to_write_idx(words[4].position, words[4].length);
         // VOR
-        add_to_write_idx(41, 3);
+        add_to_write_idx(words[6].position, words[6].length);
         get_next_hour = true;
         break;
       case(45):
         Serial.print("VIERTEL VOR ");
         // VIERTEL
-        add_to_write_idx(26, 7);
+        add_to_write_idx(words[22].position, words[22].length);
         // VOR
-        add_to_write_idx(41, 3);
+        add_to_write_idx(words[6].position, words[6].length);
         get_next_hour = true;
         break;
       case(50):
         Serial.print("ZEHN VOR ");
         // ZEHN
-        add_to_write_idx(18, 4);
+        add_to_write_idx(words[3].position, words[3].length);
         // VOR
-        add_to_write_idx(41, 3);
+        add_to_write_idx(words[6].position, words[6].length);
         get_next_hour = true;
         break;
       case(55):
         Serial.print("FÜNF VOR ");
         // FÜNF
-        add_to_write_idx(7, 4);
+        add_to_write_idx(words[2].position, words[2].length);
         // VOR
-        add_to_write_idx(41, 3);
+        add_to_write_idx(words[6].position, words[6].length);
         get_next_hour = true;
         break;
       default:
@@ -282,69 +266,69 @@ void calculate_next_leds()
 
         // EIN
         if (full_hour) {
-          add_to_write_idx(63,3);
+          add_to_write_idx(words[23].position, words[23].length);
           Serial.print("EIN");
         }
         // EINS
         else {
           Serial.print("EINS");
-          add_to_write_idx(62, 4);
+          add_to_write_idx(words[11].position, words[11].length);
         }
         break;
       case(2):
         Serial.print("ZWEI");
         // ZWEI
-        add_to_write_idx(55, 4);
+        add_to_write_idx(words[12].position, words[12].length);
         break;
       case(3):
         Serial.print("DREI");
         // DREI
-        add_to_write_idx(66, 4);
+       add_to_write_idx(words[13].position, words[13].length);
         break;
       case(4):
         Serial.print("VIER");
         // VIER
-        add_to_write_idx(73, 4);
+        add_to_write_idx(words[14].position, words[14].length);
         break;
       case(5):
         Serial.print("FÜNF");
         // FÜNF
-        add_to_write_idx(51, 4);
+        add_to_write_idx(words[10].position, words[10].length);
         break;
       case(6):
         Serial.print("SECHS");
         // SECHS
-        add_to_write_idx(83, 5);
+        add_to_write_idx(words[15].position, words[15].length);
         break;
       case(7):
         Serial.print("SIEBEN");
         // SIEBEN
-        add_to_write_idx(88, 6);
+       add_to_write_idx(words[17].position, words[17].length);
         break;
       case(8):
         Serial.print("ACHT");
         // ACHT
-        add_to_write_idx(77, 4);
+        add_to_write_idx(words[16].position, words[16].length);
         break;
       case(9):
         Serial.print("NEUN");
         // NEUN
-        add_to_write_idx(103, 4);
+        add_to_write_idx(words[20].position, words[20].length);
         break;
       case(10):
         Serial.print("ZEHN");
         // ZEHN
-        add_to_write_idx(106, 4);
+        add_to_write_idx(words[19].position, words[19].length);
         break;
       case(11):
         Serial.print("ELF");
         // ELF
-        add_to_write_idx(49, 3);
+        add_to_write_idx(words[9].position, words[9].length);
         break;
       case(12):
         Serial.print("ZWÖLF");
         // ZWÖLF
-        add_to_write_idx(94, 5);
+       add_to_write_idx(words[18].position, words[18].length);
         break;
     }
 
