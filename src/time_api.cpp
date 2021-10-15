@@ -39,7 +39,7 @@ void get_time_from_api()
     const char *timeApi = "http://worldtimeapi.org/api/timezone/Europe/Berlin";
     String timeString;
     StaticJsonDocument<800> doc;
-    unsigned long timerDelay = 1000;
+    unsigned long timerDelay = 30000;
     static unsigned long lastTime = 0;
     if ((millis() - lastTime) > timerDelay)
     {

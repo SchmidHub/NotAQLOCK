@@ -42,7 +42,7 @@ Adafruit_NeoPixel   strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 uint8_t             color_red     = 128;
 uint8_t             color_green   = 128;
 uint8_t             color_blue    = 128;
-uint8_t             brightness    = 50;
+uint8_t             brightness    = 100;
 bool                time_change   = true;
 bool                color_change  = false;
 bool                brightness_change = false;
@@ -89,7 +89,7 @@ void led_startup()
   {
     strip.setPixelColor(i, strip.Color(color_red, color_green, color_blue));
     j++;
-    if (j % 11 == 0)
+    if (j % 18 == 0)
     {
       strip.show();
       delay(100);
@@ -104,7 +104,7 @@ void led_startup()
     }
 
     j++;
-    if (j % 11 == 0)
+    if (j % 18 == 0)
     {
       strip.show();
       delay(100);
@@ -523,6 +523,7 @@ void get_current_time()
 void setup() 
 {
   Serial.begin(9600);
+   Serial.println("Hallo :)");
   rtc_begin_return = rtc.begin();
   if (! rtc.begin() ) 
   {
@@ -536,7 +537,6 @@ void setup()
       Serial.println("RTC adjusted!");
     #endif
   }
-  init_letter_array();
   clear_write_idx_array();
   strip.begin();
   strip.setBrightness(brightness);
@@ -560,9 +560,28 @@ void setup()
 void loop() 
 {
 /*   get_brightness(); */
-  get_current_time();
-  calculate_next_leds();
-  show_leds();
-  Blynk.run();
-  timer.run();
+  // get_current_time();
+  // calculate_next_leds();
+  // for (size_t i = 0; i < 24; i++)
+  // {
+  //   strip.clear();
+  //   strip.show();
+  //   Serial.println(words[i].word);
+  //   add_to_write_idx(words[i].position,words[i].length);
+  //   show_leds();
+  //   delay(5000);
+  //   /* code */
+  // }
+
+  for (size_t i = 0; i < LED_COUNT; i++)
+  {
+    strip.setPixelColor(i,strip.Color(255,255,255));
+    strip.show();
+    delay(200);
+  }
+  
+  
+  // show_leds();
+  // Blynk.run();
+  // timer.run();
 }
